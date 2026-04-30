@@ -6,7 +6,7 @@
  * - CreativeEditor: For editing with the selected configuration
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { CreativeEditor } from '@cesdk/cesdk-js/react';
 import type CreativeEditorSDK from '@cesdk/cesdk-js';
 import type { Configuration } from '@cesdk/cesdk-js';
@@ -14,12 +14,12 @@ import type { Configuration } from '@cesdk/cesdk-js';
 import SelectionUI from './SelectionUI';
 import {
   initForceCropEditor,
-  DEFAULT_CROP_PRESETS,
-  SAMPLE_IMAGES,
   type CropPreset,
   type CropModeId,
   type ImageConfig
 } from '../imgly';
+import { DEFAULT_CROP_PRESETS } from './crop-presets';
+import { SAMPLE_IMAGES } from './sample-images';
 
 import styles from './App.module.css';
 
@@ -37,6 +37,7 @@ interface AppProps {
 
 export default function App({ config }: AppProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isEditorMounted, setIsEditorMounted] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageConfig>(
     SAMPLE_IMAGES[0]
   );
@@ -45,17 +46,22 @@ export default function App({ config }: AppProps) {
   );
   const [selectedMode, setSelectedMode] = useState<CropModeId>('always');
 
+  // Defer the editor mount one frame after isEditorOpen flips to true so the
+  // container paints first and the editor's progressive paint happens inside
+  // an already-laid-out parent (no perceived layout glitch).
+  useEffect(() => {
+    if (!isEditorOpen) {
+      setIsEditorMounted(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => setIsEditorMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, [isEditorOpen]);
+
   /**
-   * Handle selection completion from SelectionUI
+   * Open the editor with the currently selected configuration.
    */
-  const handleSelectionComplete = (
-    image: ImageConfig,
-    preset: CropPreset,
-    mode: CropModeId
-  ) => {
-    setSelectedImage(image);
-    setSelectedPreset(preset);
-    setSelectedMode(mode);
+  const handleOpenEditor = () => {
     setIsEditorOpen(true);
   };
 
@@ -69,44 +75,54 @@ export default function App({ config }: AppProps) {
   /**
    * Initialize the editor with selected configuration
    */
-  const handleEditorInit = async (cesdk: CreativeEditorSDK) => {
-    // Expose cesdk instance globally for automated testing
-    (window as unknown as { cesdk: CreativeEditorSDK }).cesdk = cesdk;
+  const handleEditorInit = useCallback(
+    async (cesdk: CreativeEditorSDK) => {
+      // Expose cesdk instance globally for automated testing
+      (window as unknown as { cesdk: CreativeEditorSDK }).cesdk = cesdk;
 
-    // Initialize the force crop editor with selected configuration
-    await initForceCropEditor(cesdk, {
-      preset: selectedPreset,
-      mode: selectedMode,
-      image: selectedImage
-    });
+      // Initialize the force crop editor with selected configuration
+      await initForceCropEditor(cesdk, {
+        preset: selectedPreset,
+        mode: selectedMode,
+        image: selectedImage
+      });
 
-    // Add back button to navigation bar
-    cesdk.ui.insertOrderComponent(
-      { in: 'ly.img.navigation.bar', position: 'start' },
-      {
-        id: 'ly.img.close.navigationBar',
-        onClick: () => handleClose()
-      }
-    );
-  };
+      // Add back button to navigation bar
+      cesdk.ui.insertOrderComponent(
+        { in: 'ly.img.navigation.bar', position: 'start' },
+        {
+          id: 'ly.img.close.navigationBar',
+          onClick: () => handleClose()
+        }
+      );
+    },
+    [selectedPreset, selectedMode, selectedImage]
+  );
 
   // ============================================================================
   // Render
   // ============================================================================
 
-  if (!isEditorOpen) {
-    return (
+  return (
+    <>
       <SelectionUI
         images={SAMPLE_IMAGES}
         presets={DEFAULT_CROP_PRESETS}
-        onComplete={handleSelectionComplete}
+        selectedImage={selectedImage}
+        selectedPreset={selectedPreset}
+        selectedMode={selectedMode}
+        onImageChange={setSelectedImage}
+        onPresetChange={setSelectedPreset}
+        onModeChange={setSelectedMode}
+        onOpenEditor={handleOpenEditor}
       />
-    );
-  }
-
-  return (
-    <div className={styles.editorContainer}>
-      <CreativeEditor config={config} init={handleEditorInit} />
-    </div>
+      {isEditorOpen && (
+        <div className={styles.editorContainer}>
+          {isEditorMounted && (
+            <CreativeEditor config={config} init={handleEditorInit} />
+          )}
+        </div>
+      )}
+    </>
   );
 }
