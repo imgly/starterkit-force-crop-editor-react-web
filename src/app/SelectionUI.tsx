@@ -7,7 +7,7 @@
  * - Pick a crop mode (Always, If Needed, Silent)
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import classNames from 'classnames';
 import type { CropPreset, CropModeId, ImageConfig } from '../imgly';
 
@@ -20,11 +20,13 @@ import styles from './SelectionUI.module.css';
 interface SelectionUIProps {
   images: ImageConfig[];
   presets: CropPreset[];
-  onComplete: (
-    image: ImageConfig,
-    preset: CropPreset,
-    mode: CropModeId
-  ) => void;
+  selectedImage: ImageConfig;
+  selectedPreset: CropPreset;
+  selectedMode: CropModeId;
+  onImageChange: (image: ImageConfig) => void;
+  onPresetChange: (preset: CropPreset) => void;
+  onModeChange: (mode: CropModeId) => void;
+  onOpenEditor: () => void;
 }
 
 interface CropModeOption {
@@ -66,21 +68,15 @@ const CROP_MODES: CropModeOption[] = [
 export default function SelectionUI({
   images,
   presets,
-  onComplete
+  selectedImage,
+  selectedPreset,
+  selectedMode,
+  onImageChange,
+  onPresetChange,
+  onModeChange,
+  onOpenEditor
 }: SelectionUIProps) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
-  const [selectedMode, setSelectedMode] = useState<CropModeId>('always');
-
   const selectedModeOption = CROP_MODES.find((m) => m.id === selectedMode);
-
-  const handleOpenEditor = () => {
-    onComplete(
-      images[selectedImageIndex],
-      presets[selectedPresetIndex],
-      selectedMode
-    );
-  };
 
   return (
     <div className={styles.selectionWrapper}>
@@ -93,10 +89,10 @@ export default function SelectionUI({
               <div
                 key={index}
                 className={classNames(styles.imageOption, {
-                  [styles.selected]: index === selectedImageIndex,
+                  [styles.selected]: image === selectedImage,
                   [styles.tall]: index === 0
                 })}
-                onClick={() => setSelectedImageIndex(index)}
+                onClick={() => onImageChange(image)}
               >
                 <img src={image.thumb} alt={image.alt} loading="lazy" />
               </div>
@@ -108,7 +104,7 @@ export default function SelectionUI({
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Select Crop Preset</h2>
           <div className={styles.presetGrid}>
-            {presets.map((preset, index) => {
+            {presets.map((preset) => {
               const { width, height } = preset.payload.transformPreset;
               const ratio = width === height ? '1:1' : `${width}:${height}`;
 
@@ -116,9 +112,9 @@ export default function SelectionUI({
                 <div
                   key={preset.id}
                   className={classNames(styles.presetOption, {
-                    [styles.selected]: index === selectedPresetIndex
+                    [styles.selected]: preset.id === selectedPreset.id
                   })}
-                  onClick={() => setSelectedPresetIndex(index)}
+                  onClick={() => onPresetChange(preset)}
                 >
                   <div className={styles.presetIconWrapper}>
                     <img src={preset.meta.icon} alt={preset.meta.thumbAlt} />
@@ -144,7 +140,7 @@ export default function SelectionUI({
                   className={classNames(styles.modeTab, {
                     [styles.selected]: mode.id === selectedMode
                   })}
-                  onClick={() => setSelectedMode(mode.id)}
+                  onClick={() => onModeChange(mode.id)}
                 >
                   {mode.label}
                 </button>
@@ -159,7 +155,7 @@ export default function SelectionUI({
         {/* Open Editor Button */}
         <button
           className={styles.openButton}
-          onClick={handleOpenEditor}
+          onClick={onOpenEditor}
           data-cy="applyButton"
         >
           Open Editor

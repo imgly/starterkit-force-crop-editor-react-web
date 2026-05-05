@@ -19,7 +19,6 @@ import {
   ColorPaletteAssetSource,
   EffectsAssetSource,
   FiltersAssetSource,
-  PagePresetsAssetSource,
   TextComponentAssetSource,
   TypefaceAssetSource,
   VectorShapeAssetSource
@@ -27,7 +26,6 @@ import {
 
 // Configuration and plugins
 import { PhotoEditorConfig } from './config/plugin';
-import { resolveAssetPath } from './resolveAssetPath';
 
 // Re-export for external use
 export { PhotoEditorConfig } from './config/plugin';
@@ -80,108 +78,6 @@ export interface ImageConfig {
 }
 
 // ============================================================================
-// Default Crop Presets
-// ============================================================================
-
-const CASE_ASSET_PATH = resolveAssetPath('/assets/force-crop');
-
-/**
- * Default crop presets for common social media formats.
- */
-export const DEFAULT_CROP_PRESETS: CropPreset[] = [
-  {
-    id: 'custom-portrait-post',
-    label: { en: 'Portrait Post (4:5)' },
-    meta: {
-      thumbUri: `${CASE_ASSET_PATH}/thumb-instagram.png`,
-      icon: `${CASE_ASSET_PATH}/logo-instagram.svg`,
-      thumbAlt: 'Instagram Logo'
-    },
-    payload: {
-      transformPreset: {
-        type: 'FixedAspectRatio',
-        width: 4,
-        height: 5,
-        designUnit: 'Pixel'
-      }
-    },
-    groups: ['custom-ratio']
-  },
-  {
-    id: 'custom-profile-photo',
-    label: { en: 'Profile Photo (1:1)' },
-    meta: {
-      thumbUri: `${CASE_ASSET_PATH}/thumb-linkedin.png`,
-      icon: `${CASE_ASSET_PATH}/logo-linkedin.svg`,
-      thumbAlt: 'LinkedIn Logo'
-    },
-    payload: {
-      transformPreset: {
-        type: 'FixedAspectRatio',
-        width: 1,
-        height: 1,
-        designUnit: 'Pixel'
-      }
-    },
-    groups: ['custom-ratio']
-  },
-  {
-    id: 'custom-shared-image',
-    label: { en: 'Shared Image (1.91:1)' },
-    meta: {
-      thumbUri: `${CASE_ASSET_PATH}/thumb-facebook.png`,
-      icon: `${CASE_ASSET_PATH}/logo-facebook.svg`,
-      thumbAlt: 'Facebook Logo'
-    },
-    payload: {
-      transformPreset: {
-        type: 'FixedAspectRatio',
-        width: 1.91,
-        height: 1,
-        designUnit: 'Pixel'
-      }
-    },
-    groups: ['custom-ratio']
-  }
-];
-
-// ============================================================================
-// Default Sample Image
-// ============================================================================
-
-/**
- * Sample images for demonstration purposes.
- */
-export const SAMPLE_IMAGES: ImageConfig[] = [
-  {
-    full: `${CASE_ASSET_PATH}/image-1.png`,
-    thumb: `${CASE_ASSET_PATH}/image-1.png`,
-    width: 800,
-    height: 1200,
-    alt: 'Photographer with camera'
-  },
-  {
-    full: `${CASE_ASSET_PATH}/image-2.png`,
-    thumb: `${CASE_ASSET_PATH}/image-2.png`,
-    width: 1200,
-    height: 800,
-    alt: 'Mountain landscape'
-  },
-  {
-    full: `${CASE_ASSET_PATH}/image-3.png`,
-    thumb: `${CASE_ASSET_PATH}/image-3.png`,
-    width: 1200,
-    height: 1200,
-    alt: 'Healthy salad bowl'
-  }
-];
-
-/**
- * Default sample image for demonstration purposes.
- */
-export const DEFAULT_IMAGE: ImageConfig = SAMPLE_IMAGES[0];
-
-// ============================================================================
 // Initialize Force Crop Editor
 // ============================================================================
 
@@ -196,23 +92,19 @@ export const DEFAULT_IMAGE: ImageConfig = SAMPLE_IMAGES[0];
  *
  * @param cesdk - The CreativeEditorSDK instance to configure
  * @param options - Configuration options for force crop
- * @param options.preset - The crop preset to apply (default: Instagram Portrait 4:5)
+ * @param options.preset - The crop preset to apply
+ * @param options.image - The image configuration to load
  * @param options.mode - The crop mode: 'always', 'ifNeeded', or 'silent' (default: 'always')
- * @param options.image - The image configuration to load (default: sample image)
  */
 export async function initForceCropEditor(
   cesdk: CreativeEditorSDK,
   options: {
-    preset?: CropPreset;
+    preset: CropPreset;
+    image: ImageConfig;
     mode?: CropModeId;
-    image?: ImageConfig;
-  } = {}
+  }
 ) {
-  const {
-    preset = DEFAULT_CROP_PRESETS[0], // Default to Instagram Portrait (4:5)
-    mode = 'always',
-    image = DEFAULT_IMAGE
-  } = options;
+  const { preset, image, mode = 'always' } = options;
 
   // ============================================================================
   // Configuration Plugin
@@ -231,7 +123,6 @@ export async function initForceCropEditor(
   await cesdk.addPlugin(new ColorPaletteAssetSource());
   await cesdk.addPlugin(new EffectsAssetSource());
   await cesdk.addPlugin(new FiltersAssetSource());
-  await cesdk.addPlugin(new PagePresetsAssetSource());
   await cesdk.addPlugin(new TextComponentAssetSource());
   await cesdk.addPlugin(new TypefaceAssetSource());
   await cesdk.addPlugin(new VectorShapeAssetSource());
@@ -242,33 +133,18 @@ export async function initForceCropEditor(
 
   const engine = cesdk.engine;
 
-  // Create a new scene
-  const scene = engine.scene.create('Free');
-  engine.scene.setDesignUnit('Pixel');
-  const page = engine.block.create('page');
-  engine.block.appendChild(scene, page);
+  await cesdk.createFromImage(image.full);
+  const page = engine.scene.getCurrentPage();
 
-  // Set page size based on the image
-  engine.block.setWidth(page, image.width);
-  engine.block.setHeight(page, image.height);
-
-  // Create image fill
-  const fill = engine.block.createFill('image');
-  engine.block.setSourceSet(fill, 'fill/image/sourceSet', [
-    { uri: image.full, width: image.width, height: image.height }
-  ]);
-  engine.block.setFill(page, fill);
-  engine.block.setContentFillMode(page, 'Cover');
+  if (page == null) return;
 
   // Configure page behavior
+  engine.block.setContentFillMode(page, 'Cover');
   engine.block.setScopeEnabled(page, 'fill/change', false);
   engine.block.setScopeEnabled(page, 'fill/changeType', false);
   engine.block.setScopeEnabled(page, 'stroke/change', false);
   engine.editor.setSetting('page/moveChildrenWhenCroppingFill', true);
   engine.block.setClipped(page, true);
-
-  // Zoom auto-fit to page
-  await cesdk.actions.run('zoom.toPage', { autoFit: true });
 
   // Initially select the page
   engine.block.select(page);
@@ -278,7 +154,6 @@ export async function initForceCropEditor(
   // ============================================================================
 
   // Remove all existing crop presets and add our custom one
-  engine.asset.removeSource('ly.img.page.presets');
   engine.asset.addLocalSource('ly.img.page.presets');
   engine.asset.addAssetToSource(
     'ly.img.page.presets',
