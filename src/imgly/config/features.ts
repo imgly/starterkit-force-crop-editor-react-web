@@ -77,12 +77,12 @@ export function setupFeatures(cesdk: CreativeEditorSDK) {
     // #region Crop Features
     // 'ly.img.crop' /* Enables all children below */,
     // 'ly.img.crop.size', /* Crop size controls */
-    'ly.img.crop.rotation', /* Crop rotation controls */
-    'ly.img.crop.flip', /* Crop flip controls */
-    'ly.img.crop.fillMode', /* Crop fill mode controls */
-    'ly.img.crop.scale', /* Crop scale controls */
-    'ly.img.crop.position', /* Crop position controls */
-    'ly.img.crop.panel.autoOpen', /* Auto-open crop panel on crop mode */
+    'ly.img.crop.rotation' /* Crop rotation controls */,
+    'ly.img.crop.flip' /* Crop flip controls */,
+    'ly.img.crop.fillMode' /* Crop fill mode controls */,
+    'ly.img.crop.scale' /* Crop scale controls */,
+    'ly.img.crop.position' /* Crop position controls */,
+    'ly.img.crop.panel.autoOpen' /* Auto-open crop panel on crop mode */,
     // #endregion
 
     // ============================================================================
