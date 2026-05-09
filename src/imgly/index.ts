@@ -12,7 +12,7 @@
  * @see https://img.ly/docs/cesdk/js/user-interface/customization/force-crop-c2854e/
  */
 
-import CreativeEditorSDK from '@cesdk/cesdk-js';
+import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
 import {
   BlurAssetSource,
