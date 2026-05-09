@@ -20,13 +20,11 @@ import App from './app/App';
 
 const config: Configuration = {
   // Unique user identifier for analytics (customize for your app)
-  userId: 'starterkit-force-crop-editor-user'
+  userId: 'starterkit-force-crop-editor-user',
 
-  // Local assets (uncomment and set path for self-hosted assets)
-  // baseURL: `/assets/`,
+  // Local assets for monorepo development
+  
 
-  // License key (required for production)
-  // license: 'YOUR_LICENSE_KEY',
 };
 
 // ============================================================================
