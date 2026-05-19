@@ -12,10 +12,11 @@
  * @see https://img.ly/docs/cesdk/js/user-interface/customization/force-crop-c2854e/
  */
 
-import CreativeEditorSDK from '@cesdk/cesdk-js';
+import type CreativeEditorSDK from '@cesdk/cesdk-js';
 
 import {
   BlurAssetSource,
+  ImageColorsAssetSource,
   ColorPaletteAssetSource,
   EffectsAssetSource,
   FiltersAssetSource,
@@ -120,6 +121,7 @@ export async function initForceCropEditor(
 
   // Asset source plugins provide built-in asset libraries
   await cesdk.addPlugin(new BlurAssetSource());
+  await cesdk.addPlugin(new ImageColorsAssetSource());
   await cesdk.addPlugin(new ColorPaletteAssetSource());
   await cesdk.addPlugin(new EffectsAssetSource());
   await cesdk.addPlugin(new FiltersAssetSource());
