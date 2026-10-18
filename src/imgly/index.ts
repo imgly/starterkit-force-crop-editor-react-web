@@ -137,9 +137,7 @@ export async function initForceCropEditor(
 
   const engine = cesdk.engine;
 
-  // Create the scene with the engine, which does not wait for the canvas, so
-  // the editor first shows the image after the crop below is applied.
-  await engine.scene.createFromImage(image.full);
+  await cesdk.createFromImage(image.full);
   const page = engine.scene.getCurrentPage();
 
   if (page == null) return;
@@ -172,7 +170,4 @@ export async function initForceCropEditor(
     presetId: preset.id,
     sourceId: 'ly.img.page.presets'
   });
-
-  // Fit the page into view now that it has its final size
-  await cesdk.actions.run('zoom.toPage', { page: 'first', autoFit: true });
 }
