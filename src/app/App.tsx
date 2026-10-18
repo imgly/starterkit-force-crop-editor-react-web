@@ -79,6 +79,7 @@ export default function App({ config }: AppProps) {
   const handleEditorInit = useCallback(
     async (cesdk: CreativeEditorSDK) => {
       // Expose cesdk instance globally for automated testing
+      (window as unknown as { cesdk: CreativeEditorSDK }).cesdk = cesdk;
 
       // Initialize the force crop editor with selected configuration
       await initForceCropEditor(cesdk, {
